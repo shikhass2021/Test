@@ -8,13 +8,18 @@ TextInput,
 TouchableOpacity,
 FlatList,
 Alert,
+Image,
 
 } from 'react-native';
 import Icon from "react-native-vector-icons/MaterialIcons";
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+
 // Define color constants
 
-const COLORS = {primary: '#1f145c', white: '#FFCC00'};
+const COLORS = {primary: '#1f145c', white: '#CCFFFF'};
+
 
 const App = () => { 
 
@@ -24,6 +29,8 @@ const App = () => {
   const[todos,setTodos] = React.useState([
     {id: 1, task:'First todo', completed: true},
     {id: 2, task:'Second todo', completed: true},
+
+
   ]);
 
 
@@ -61,10 +68,27 @@ const App = () => {
     </View>
     );
   };
+
+  React.useEffect(() => {
+    // Retrieve to-do items from AsyncStorage when the component mounts
+    const retrieveTodos = async () => {
+      try {
+        const storedTodos = await AsyncStorage.getItem('todos');
+        if (storedTodos !== null) {
+          setTodos(JSON.parse(storedTodos));
+        }
+      } catch (error) {
+        console.error('Error retrieving todos from AsyncStorage:', error);
+      }
+    };
+  
+    retrieveTodos();
+  }, []);
+  
     
   // Function to add a new to-do item
 
-  const addTodo = ()=>{
+const addTodo = ()=>{
  if(textInput == ""){
 
   Alert.alert("Error","Please input TO DO LIST")
@@ -76,8 +100,15 @@ const App = () => {
     task:textInput,
     completed:false,
   };
-  setTodos([...todos,newTodo])
+  // setTodos([...todos,newTodo])
+  setTodos((prevTodos) => [...prevTodos, newTodo]);
+
   setTextInput("");
+
+  // Update AsyncStorage with the new list of items
+  const updatedTodos = [...todos, newTodo];
+  AsyncStorage.setItem('todos', JSON.stringify(updatedTodos))
+  .catch((error) => console.error('Error storing todos in AsyncStorage:', error));
  }
 };
 // mark to do if task is done
@@ -96,7 +127,12 @@ setTodos(newTodos);
 
 const deleteTodo = todoId => {
   const newTodos = todos.filter(item => item.id != todoId);
+  
+  // Update the app's state with the new list
   setTodos(newTodos);
+  // Update AsyncStorage with the new list of items
+  AsyncStorage.setItem('todos', JSON.stringify(newTodos))
+    .catch((error) => console.error('Error storing todos in AsyncStorage:', error));
 };
 
 // Function to clear all to-do items with a confirmation alert
@@ -176,7 +212,8 @@ header: {
   textAlign:'center',
   alignItems: 'center',
   marginVertical: 10,
-  marginHorizontal: 10,
+  //deleteiconfixing
+  marginHorizontal: 5,
 
   borderRadius: 10,
   justifyContent: 'space-between',
@@ -236,5 +273,7 @@ iconContainer: {
 
 },
 });
+
+
   
 export default App;
