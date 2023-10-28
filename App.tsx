@@ -8,24 +8,33 @@ TextInput,
 TouchableOpacity,
 FlatList,
 Alert,
+Image,
 
 } from 'react-native';
 import Icon from "react-native-vector-icons/MaterialIcons";
-const COLORS = {primary: '#1f145c', white: '#FFCC00'};
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
+// Define color constants
 
-
+const COLORS = {primary: '#1f145c', white: '#CCFFFF'};
 
 
 const App = () => { 
 
-  const [textInput,setTextInput] = React.useState('');
+  // State variables for input and to-do items
 
+  const [textInput,setTextInput] = React.useState('');
   const[todos,setTodos] = React.useState([
     {id: 1, task:'First todo', completed: true},
     {id: 2, task:'Second todo', completed: true},
+
+
   ]);
+
+
+  // Component to render each to-do item
 
   const ListItem = ({todo}) => {
     return (
@@ -59,8 +68,27 @@ const App = () => {
     </View>
     );
   };
+
+  React.useEffect(() => {
+    // Retrieve to-do items from AsyncStorage when the component mounts
+    const retrieveTodos = async () => {
+      try {
+        const storedTodos = await AsyncStorage.getItem('todos');
+        if (storedTodos !== null) {
+          setTodos(JSON.parse(storedTodos));
+        }
+      } catch (error) {
+        console.error('Error retrieving todos from AsyncStorage:', error);
+      }
+    };
   
-  const addTodo = ()=>{
+    retrieveTodos();
+  }, []);
+  
+    
+  // Function to add a new to-do item
+
+const addTodo = ()=>{
  if(textInput == ""){
 
   Alert.alert("Error","Please input TO DO LIST")
@@ -72,8 +100,15 @@ const App = () => {
     task:textInput,
     completed:false,
   };
-  setTodos([...todos,newTodo])
+  // setTodos([...todos,newTodo])
+  setTodos((prevTodos) => [...prevTodos, newTodo]);
+
   setTextInput("");
+
+  // Update AsyncStorage with the new list of items
+  const updatedTodos = [...todos, newTodo];
+  AsyncStorage.setItem('todos', JSON.stringify(updatedTodos))
+  .catch((error) => console.error('Error storing todos in AsyncStorage:', error));
  }
 };
 // mark to do if task is done
@@ -92,10 +127,15 @@ setTodos(newTodos);
 
 const deleteTodo = todoId => {
   const newTodos = todos.filter(item => item.id != todoId);
+  
+  // Update the app's state with the new list
   setTodos(newTodos);
+  // Update AsyncStorage with the new list of items
+  AsyncStorage.setItem('todos', JSON.stringify(newTodos))
+    .catch((error) => console.error('Error storing todos in AsyncStorage:', error));
 };
 
-// clear all
+// Function to clear all to-do items with a confirmation alert
 
 const clearTodos = () => {
   Alert.alert("Confirm", "Clear todos?", [
@@ -110,23 +150,15 @@ const clearTodos = () => {
 };
 
 
-
-  return(
+return(
      <SafeAreaView style={{flex: 1, backgroundColor: COLORS.white}}>
       <View style={styles.header}>
 
-        {/* <Text style = {{fontWeight: 'bold',fontSize:30, color: COLORS.primary}}>TASK LIST</Text> */}
         <Text style = {styles.headline}> {'\t\t\t\t\t\t\t\t\t\t\t\t\t'}TO-DO-LIST</Text>
-        <Icon name="delete" size={35} color="red"  style={{ margin: 20 }} onPress={clearTodos}/>
+        <Icon name="delete" size={30} color="red"   style={{ margin: 20 }} onPress={clearTodos}/>
 
-        
-       
-        
       </View>
-      
-      
-
-      
+    
       <FlatList 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{padding: 20, paddingBottom:100}}
@@ -150,6 +182,9 @@ const clearTodos = () => {
 };
 
 
+// Styles for the components
+
+
     
 const styles = StyleSheet.create({
   actionIcon: {
@@ -163,8 +198,7 @@ const styles = StyleSheet.create({
   },
   listItem: {
     padding: 20,
-    // backgroundColor: COLORS.white,
-    backgroundColor: '#FFFFCC', // Change 'blue' to the color you want
+    backgroundColor: '#FFFFCC', 
 
     flexDirection: 'row',
     elevation: 12,
@@ -178,7 +212,8 @@ header: {
   textAlign:'center',
   alignItems: 'center',
   marginVertical: 10,
-  marginHorizontal: 10,
+  //deleteiconfixing
+  marginHorizontal: 5,
 
   borderRadius: 10,
   justifyContent: 'space-between',
@@ -189,7 +224,6 @@ header: {
 
 headline:{
   
-  // fontWeight: 'bold',
   fontSize:40,
   alignItems:'center',
   textAlign:'center',
@@ -217,7 +251,6 @@ footer: {
 },
 inputContainer: {
   backgroundColor: COLORS.white,
-  // marginHorizontal: 10,
 
   flex: 1,
   height: 60,
@@ -226,7 +259,7 @@ inputContainer: {
   borderRadius: 10,
   backgroundColor: '#FFFF99',
   justifyContent: 'center', // Center vertically
-  alignItems: 'center', // Center horizontally
+  alignItems: 'center', 
 },
 iconContainer: {
   height: 60,
@@ -240,6 +273,7 @@ iconContainer: {
 
 },
 });
-  
 
+
+  
 export default App;
